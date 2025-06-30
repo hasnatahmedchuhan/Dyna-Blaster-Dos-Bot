@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://telegram.org https://cdnjs.cloudflare.com; script-src 'self' 'unsafe-eval'; style-src 'self' 'unsafe-inline'">
+    <title>Dyna Blaster - $DYNA Telegram Mini App</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        :root {
+            --primary: #8e44ad;
+            --secondary: #3498db;
+            --accent: #f1c40f;
+            --dark-bg: #121212;
+            --darker-bg: #0a0a0a;
+            --card-bg: #1a1a2e;
+            --text: #ffffff;
+            --success: #2ecc71;
+            --warning: #e74c3c;
+            --border: #333;
+        }
+
+        body {
+            background: var(--dark-bg);
+            color: var(--text);
+            min-height: 100vh;
+            overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(52, 152, 219, 0.1) 0%, transparent 20%),
+                radial-gradient(circle at 90% 80%, rgba(142, 68, 173, 0.1) 0%, transparent 20%);
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            background: rgba(10, 10, 10, 0.8);
+            padding: 15px 20px;
+            border-bottom: 2px solid var(--primary);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            backdrop-filter: blur(5px);
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            width: 45px;
+            height: 45px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 24px;
+        }
+
+        .logo-text {
+            font-size: 1.8rem;
+            font-weight: 800;
+            background: linear-gradient(to right, var(--accent), var(--secondary));
+            background-clip: text;
+            -webkit-background-clip: text;
+            color: transparent;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .wallet-section {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .balance {
+            background: rgba(26, 26, 46, 0.7);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 1rem;
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .wallet-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1rem;
+        }
+
+        .wallet-btn:hover {
+            background: #7d3c98;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(142, 68, 173, 0.4);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+            border-bottom: 2px solid var(--border);
+        }
+
+        .tab-btn {
+            background: transparent;
+            color: var(--text);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            border-radius: 8px 8px 0 0;
+            transition: all 0.3s;
+        }
+
+        .tab-btn.active {
+            background: var(--card-bg);
+            color: var(--accent);
+            border-bottom: 3px solid var(--accent);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .game-section {
+            background: var(--darker-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+        }
+
+        .section-title {
+            text-align: center;
+            margin-bottom: 25px;
+            color: var(--accent);
+            font-size: 2rem;
+            position: relative;
+            padding-bottom: 10px;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 3px;
+            background: var(--accent);
+            border-radius: 3px;
+        }
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 30px;
+        }
+
+        .game-display {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        #jsdos {
+            width: 100%;
+            height: 500px;
+            border-radius: 10px;
+            border: 2px solid var(--primary);
+            background: #000;
+        }
+
+        .instructions {
+            flex: 1;
+            min-width: 300px;
+            background: var(--card-bg);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+        }
+
+        .instructions h3 {
+            color: var(--accent);
+            margin-bottom: 15px;
+            font-size: 1.5rem;
+        }
+
+        .instructions ul {
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 12px;
+            line-height: 1.6;
+        }
+
+        .instructions .highlight {
+            background: rgba(241, 196, 15, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .crypto-section {
+            background: var(--darker-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+        }
+
+        .game-area {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+
+        .game-board {
+            background: #0f3460;
+            border-radius: 10px;
+            height: 300px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid var(--primary);
+            margin: 0 auto;
+            max-width: 600px;
+        }
+
+        .player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background: var(--accent);
+            border-radius: 50%;
+            top: 150px;
+            left: 50px;
+            box-shadow: 0 0 15px rgba(241, 196, 15, 0.8);
+            z-index: 10;
+        }
+
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 1.5s infinite;
+            box-shadow: 0 0 10px rgba(46, 204, 113, 0.7);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        .controls {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .keyboard-controls, .touch-controls {
+            background: rgba(26, 26, 46, 0.7);
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .keyboard-controls h3, .touch-controls h3 {
+            margin-bottom: 15px;
+            color: var(--accent);
+            font-size: 1.4rem;
+        }
+
+        .keys {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+
+        .key {
+            background: var(--dark-bg);
+            border: 2px solid var(--primary);
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 1.2rem;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        .touch-controls {
+            display: none;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: auto;
+            gap: 15px;
+        }
+
+        .touch-controls h3 {
+            grid-column: 1 / 4;
+            text-align: center;
+            color: var(--accent);
+            margin-bottom: 15px;
+        }
+
+        .control-btn {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.8rem;
+            cursor: pointer;
+            user-select: none;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: all 0.2s;
+        }
+
+        .control-btn:active {
+            transform: scale(0.95);
+            background: #7d3c98;
+        }
+
+        .action-btn {
+            background: var(--accent);
+            color: var(--dark-bg);
+            font-weight: bold;
+            grid-column: 2;
+        }
+
+        .rewards-section {
+            background: var(--darker-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            margin: 30px 0;
+            border: 1px solid var(--border);
+        }
+
+        .rewards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 25px;
+        }
+
+        .reward-card {
+            background: var(--card-bg);
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+            border: 1px solid var(--primary);
+            transition: all 0.3s;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .reward-card:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.4);
+        }
+
+        .reward-icon {
+            font-size: 3.5rem;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+
+        .reward-amount {
+            font-weight: bold;
+            font-size: 1.8rem;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .reward-desc {
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            color: #ddd;
+        }
+
+        .claim-btn {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-weight: 600;
+            cursor: pointer;
+            width: 100%;
+            max-width: 200px;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            margin-top: auto;
+        }
+
+        .claim-btn:hover {
+            background: #27ae60;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(46, 204, 113, 0.4);
+        }
+
+        .transaction-section {
+            background: var(--darker-bg);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+            border: 1px solid var(--border);
+        }
+
+        .transaction-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            font-size: 1.1rem;
+            color: #ddd;
+        }
+
+        .form-group input {
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid var(--border);
+            background: var(--card-bg);
+            color: var(--text);
+            font-size: 1rem;
+        }
+
+        .submit-btn {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1rem;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background: #2980b9;
+            transform: translateY(-3px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.4);
+        }
+
+        footer {
+            background: rgba(10, 10, 10, 0.8);
+            padding: 20px;
+            text-align: center;
+            margin-top: 40px;
+            border-top: 2px solid var(--primary);
+            backdrop-filter: blur(5px);
+        }
+
+        footer p {
+            color: #aaa;
+            font-size: 1rem;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: var(--success);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            transform: translateX(120%);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .notification.show {
+            transform: translateX(0);
+        }
+
+        .notification.warning {
+            background: var(--warning);
+        }
+
+        /* Mobile specific styles */
+        @media (max-width: 768px) {
+            .tabs {
+                flex-direction: column;
+            }
+            
+            .tab-btn {
+                width: 100%;
+                border-radius: 8px;
+                margin-bottom: 5px;
+            }
+            
+            .tab-btn.active {
+                border-radius: 8px 8px 0 0;
+            }
+            
+            .touch-controls {
+                display: grid;
+            }
+            
+            .keyboard-controls {
+                display: none;
+            }
+            
+            header {
+                flex-direction: column;
+                gap: 15px;
+            }
+            
+            .wallet-section {
+                width: 100%;
+                justify-content: center;
+            }
+            
+            #jsdos {
+                height: 300px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <div class="logo-icon">$</div>
+            <div class="logo-text">DYNA BLASTER</div>
+        </div>
+        <div class="wallet-section">
+            <div class="balance">
+                <i class="fas fa-coins"></i>
+                $DYNA: <span id="dynaBalance">1,250</span>
+            </div>
+            <button class="wallet-btn" id="connectWallet">
+                <i class="fas fa-wallet"></i>
+                <span>Connect Wallet</span>
+            </button>
+        </div>
+    </header>
+
+    <div class="container">
+        <div class="tabs">
+            <button class="tab-btn active" data-tab="game-tab">Play Classic Game</button>
+            <button class="tab-btn" data-tab="crypto-tab">$DYNA Rewards</button>
+        </div>
+
+        <div class="tab-content active" id="game-tab">
+            <div class="game-section">
+                <h2 class="section-title">Play Dyna Blaster (DOS)</h2>
+                <div class="game-container">
+                    <div class="game-wrapper">
+                        <div class="game-display">
+                            <div id="jsdos"></div>
+                        </div>
+                        <div class="instructions">
+                            <h3>How to Play:</h3>
+                            <ul>
+                                <li><span class="highlight">Arrow Keys</span> - Move your character</li>
+                                <li><span class="highlight">Space</span> - Place bomb</li>
+                                <li><span class="highlight">ESC</span> - Pause game</li>
+                                <li><span class="highlight">Alt+Enter</span> - Toggle fullscreen</li>
+                                <li><span class="highlight">Note:</span> Game may take 10-20 seconds to load</li>
+                            </ul>
+                            <div style="margin-top: 20px; padding: 15px; background: rgba(241, 196, 15, 0.1); border-radius: 10px; border-left: 4px solid var(--accent);">
+                                <p><strong>Earn $DYNA:</strong> Complete levels to earn $DYNA tokens that can be traded or used for in-game upgrades!</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="crypto-tab">
+            <div class="crypto-section">
+                <h2 class="section-title">$DYNA Miner Game</h2>
+                <div class="game-area">
+                    <div class="game-board" id="gameBoard">
+                        <div class="player" id="player"></div>
+                        <!-- Coins will be generated dynamically -->
+                    </div>
+                    
+                    <div class="controls">
+                        <div class="keyboard-controls">
+                            <h3>Keyboard Controls</h3>
+                            <div class="keys">
+                                <div class="key">W</div>
+                                <div class="key">A</div>
+                                <div class="key">S</div>
+                                <div class="key">D</div>
+                                <div class="key">SPACE</div>
+                            </div>
+                        </div>
+                        
+                        <div class="touch-controls">
+                            <h3>Touch Controls</h3>
+                            <div class="control-btn">⬆️</div>
+                            <div class="control-btn">⬅️</div>
+                            <div class="control-btn">➡️</div>
+                            <div class="control-btn">⬇️</div>
+                            <div class="control-btn action-btn">💣</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="rewards-section">
+                <h2 class="section-title">Daily Rewards</h2>
+                <div class="rewards-grid">
+                    <div class="reward-card">
+                        <div class="reward-icon">💰</div>
+                        <div class="reward-amount">10 $DYNA</div>
+                        <div class="reward-desc">Daily Login Bonus</div>
+                        <button class="claim-btn">Claim</button>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">💎</div>
+                        <div class="reward-amount">50 $DYNA</div>
+                        <div class="reward-desc">Complete Level</div>
+                        <button class="claim-btn">Claim</button>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">🏆</div>
+                        <div class="reward-amount">100 $DYNA</div>
+                        <div class="reward-desc">Weekly Bonus</div>
+                        <button class="claim-btn">Claim</button>
+                    </div>
+                    <div class="reward-card">
+                        <div class="reward-icon">🎁</div>
+                        <div class="reward-amount">200 $DYNA</div>
+                        <div class="reward-desc">Refer a Friend</div>
+                        <button class="claim-btn">Claim</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="transaction-section">
+                <h2 class="section-title">Transfer $DYNA</h2>
+                <form class="transaction-form">
+                    <div class="form-group">
+                        <label for="recipient"><i class="fas fa-wallet"></i> Recipient Wallet</label>
+                        <input type="text" id="recipient" placeholder="Enter wallet address">
+                    </div>
+                    <div class="form-group">
+                        <label for="amount"><i class="fas fa-coins"></i> Amount ($DYNA)</label>
+                        <input type="number" id="amount" placeholder="Enter amount">
+                    </div>
+                    <button type="submit" class="submit-btn">
+                        <i class="fas fa-paper-plane"></i> Send Transaction
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <p>Powered by TON Blockchain • $DYNA Token • All rights reserved</p>
+    </footer>
+
+    <div class="notification" id="notification">
+        <i class="fas fa-check-circle"></i>
+        <span>Transaction successful!</span>
+    </div>
+
+    <!-- JSDOS Integration -->
+    <script src="jsdos/js-dos.js"></script>
+    <script>
+        // Initialize DOS emulator
+        const dos = new Dos(document.getElementById("jsdos"), {
+            wdosboxUrl: "jsdos/wdosbox.js",
+            cycles: 1000,
+            autolock: true
+        }).ready((fs, main) => {
+            fs.extract("dyna.zip").then(() => {
+                main(["-c", "DYNABLASTER.EXE"])
+            });
+        });
+    </script>
+
+    <script>
+        // Initialize Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.expand();
+        tg.enableClosingConfirmation();
+        
+        // Telegram UI optimizations
+        Telegram.WebApp.setHeaderColor('#8e44ad');
+        Telegram.WebApp.setBackgroundColor('#121212');
+        Telegram.WebApp.MainButton.text = "PLAY NOW";
+        Telegram.WebApp.MainButton.show();
+        Telegram.WebApp.MainButton.onClick(() => {
+            document.querySelector('.tab-btn[data-tab="game-tab"]').click();
+        });
+        
+        // Initialize tab functionality
+        const tabBtns = document.querySelectorAll('.tab-btn');
+        const tabContents = document.querySelectorAll('.tab-content');
+        
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active class from all buttons and contents
+                tabBtns.forEach(b => b.classList.remove('active'));
+                tabContents.forEach(c => c.classList.remove('active'));
+                
+                // Add active class to clicked button
+                btn.classList.add('active');
+                
+                // Show corresponding content
+                const tabId = btn.getAttribute('data-tab');
+                document.getElementById(tabId).classList.add('active');
+            });
+        });
+
+        // Game state
+        let coins = [];
+        let player = {
+            x: 50,
+            y: 150,
+            speed: 5
+        };
+        
+        // DOM elements
+        const gameBoard = document.getElementById('gameBoard');
+        const playerElement = document.getElementById('player');
+        const connectWalletBtn = document.getElementById('connectWallet');
+        const notification = document.getElementById('notification');
+        const dynaBalance = document.getElementById('dynaBalance');
+        let balance = 1250;
+        
+        // Initialize game
+        function initGame() {
+            // Create initial coins
+            createCoins(5);
+            
+            // Position player
+            updatePlayerPosition();
+            
+            // Keyboard controls for PC
+            document.addEventListener('keydown', handleKeyPress);
+            
+            // Touch controls for mobile
+            document.querySelectorAll('.control-btn').forEach(btn => {
+                btn.addEventListener('click', handleTouchControl);
+            });
+            
+            // Set up wallet connection
+            connectWalletBtn.addEventListener('click', connectWallet);
+            
+            // Set up form submission
+            document.querySelector('.transaction-form').addEventListener('submit', handleTransaction);
+            
+            // Set up claim buttons
+            document.querySelectorAll('.claim-btn').forEach(btn => {
+                btn.addEventListener('click', claimReward);
+            });
+        }
+        
+        // Create coins on the game board
+        function createCoins(count) {
+            for (let i = 0; i < count; i++) {
+                const coin = document.createElement('div');
+                coin.className = 'coin';
+                
+                // Random position within game board
+                const maxX = gameBoard.offsetWidth - 30;
+                const maxY = gameBoard.offsetHeight - 30;
+                
+                const coinX = Math.floor(Math.random() * maxX);
+                const coinY = Math.floor(Math.random() * maxY);
+                
+                coin.style.left = `${coinX}px`;
+                coin.style.top = `${coinY}px`;
+                
+                gameBoard.appendChild(coin);
+                coins.push({
+                    element: coin,
+                    x: coinX,
+                    y: coinY
+                });
+            }
+        }
+        
+        // Update player position on screen
+        function updatePlayerPosition() {
+            playerElement.style.left = `${player.x}px`;
+            playerElement.style.top = `${player.y}px`;
+        }
+        
+        // Handle keyboard controls
+        function handleKeyPress(e) {
+            const gameWidth = gameBoard.offsetWidth - 30;
+            const gameHeight = gameBoard.offsetHeight - 30;
+            
+            switch(e.key.toLowerCase()) {
+                case 'w':
+                case 'arrowup':
+                    player.y = Math.max(0, player.y - player.speed);
+                    break;
+                case 's':
+                case 'arrowdown':
+                    player.y = Math.min(gameHeight, player.y + player.speed);
+                    break;
+                case 'a':
+                case 'arrowleft':
+                    player.x = Math.max(0, player.x - player.speed);
+                    break;
+                case 'd':
+                case 'arrowright':
+                    player.x = Math.min(gameWidth, player.x + player.speed);
+                    break;
+                case ' ':
+                    placeBomb();
+                    break;
+            }
+            
+            updatePlayerPosition();
+            checkCoinCollision();
+        }
+        
+        // Handle touch controls
+        function handleTouchControl(e) {
+            const direction = e.target.textContent;
+            const gameWidth = gameBoard.offsetWidth - 30;
+            const gameHeight = gameBoard.offsetHeight - 30;
+            
+            switch(direction) {
+                case '⬆️':
+                    player.y = Math.max(0, player.y - player.speed);
+                    break;
+                case '⬇️':
+                    player.y = Math.min(gameHeight, player.y + player.speed);
+                    break;
+                case '⬅️':
+                    player.x = Math.max(0, player.x - player.speed);
+                    break;
+                case '➡️':
+                    player.x = Math.min(gameWidth, player.x + player.speed);
+                    break;
+                case '💣':
+                    placeBomb();
+                    break;
+            }
+            
+            updatePlayerPosition();
+            checkCoinCollision();
+        }
+        
+        // Place a bomb (game action)
+        function placeBomb() {
+            const bomb = document.createElement('div');
+            bomb.style.position = 'absolute';
+            bomb.style.width = '20px';
+            bomb.style.height = '20px';
+            bomb.style.background = 'red';
+            bomb.style.borderRadius = '50%';
+            bomb.style.left = `${player.x}px`;
+            bomb.style.top = `${player.y}px`;
+            bomb.style.zIndex = '10';
+            bomb.style.boxShadow = '0 0 10px rgba(255, 0, 0, 0.7)';
+            
+            gameBoard.appendChild(bomb);
+            
+            // Explode after 2 seconds
+            setTimeout(() => {
+                bomb.remove();
+                // In a real game, this would affect nearby objects
+            }, 2000);
+        }
+        
+        // Check if player collides with a coin
+        function checkCoinCollision() {
+            const playerRect = {
+                x: player.x,
+                y: player.y,
+                width: 30,
+                height: 30
+            };
+            
+            for (let i = coins.length - 1; i >= 0; i--) {
+                const coin = coins[i];
+                const coinRect = {
+                    x: coin.x,
+                    y: coin.y,
+                    width: 20,
+                    height: 20
+                };
+                
+                if (isColliding(playerRect, coinRect)) {
+                    // Remove coin
+                    coin.element.remove();
+                    coins.splice(i, 1);
+                    
+                    // Add new coin
+                    createCoins(1);
+                    
+                    // Reward player
+                    balance += 5;
+                    dynaBalance.textContent = balance.toLocaleString();
+                    showNotification('+5 $DYNA earned!');
+                }
+            }
+        }
+        
+        // Collision detection
+        function isColliding(rect1, rect2) {
+            return rect1.x < rect2.x + rect2.width &&
+                   rect1.x + rect1.width > rect2.x &&
+                   rect1.y < rect2.y + rect2.height &&
+                   rect1.y + rect1.height > rect2.y;
+        }
+        
+        // Connect TON wallet (enhanced with real integration)
+        async function connectWallet() {
+            try {
+                const ton = window.ton;
+                if (!ton) throw new Error("TON Wallet not installed");
+                
+                await ton.send("ton_requestAccounts");
+                const account = await ton.send("ton_account");
+                
+                // Store wallet address securely
+                localStorage.setItem('tonAddress', account.address);
+                
+                // Update UI
+                connectWalletBtn.innerHTML = `<i class="fas fa-check"></i> ${account.address.slice(0, 6)}...${account.address.slice(-4)}`;
+                
+                // Fetch real balance
+                const balance = await fetchBalance(account.address);
+                dynaBalance.textContent = balance.toLocaleString();
+                
+                showNotification('Wallet connected!');
+            } catch (error) {
+                console.error("Wallet connection failed:", error);
+                showNotification('Connection failed: ' + error.message, 'warning');
+            }
+        }
+        
+        // Fetch TON balance (simplified)
+        async function fetchBalance(address) {
+            try {
+                // In production: Replace with actual contract call
+                const response = await fetch(`https://tonapi.io/v1/account/getInfo?account=${address}`);
+                const data = await response.json();
+                return (data.balance / 1000000000).toFixed(2); // Convert from nanoTON
+            } catch (error) {
+                console.error("Balance fetch error:", error);
+                return 1250; // Fallback to default
+            }
+        }
+        
+        // Handle transaction submission
+        function handleTransaction(e) {
+            e.preventDefault();
+            const recipient = document.getElementById('recipient').value;
+            const amount = document.getElementById('amount').value;
+            
+            if (!recipient || !amount) {
+                showNotification('Please fill all fields', 'warning');
+                return;
+            }
+            
+            if (parseInt(amount) > balance) {
+                showNotification('Insufficient $DYNA balance', 'warning');
+                return;
+            }
+            
+            // In a real app, this would send the transaction
+            balance -= parseInt(amount);
+            dynaBalance.textContent = balance.toLocaleString();
+            showNotification(`Sent ${amount} $DYNA to ${recipient.substring(0, 8)}...`);
+            
+            // Reset form
+            e.target.reset();
+        }
+        
+        // Claim reward
+        function claimReward(e) {
+            const btn = e.target;
+            const amount = parseInt(btn.parentElement.querySelector('.reward-amount').textContent);
+            
+            balance += amount;
+            dynaBalance.textContent = balance.toLocaleString();
+            
+            btn.textContent = 'Claimed!';
+            btn.disabled = true;
+            btn.style.background = '#7f8c8d';
+            
+            showNotification(`+${amount} $DYNA claimed!`);
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            notification.querySelector('span').textContent = message;
+            notification.className = 'notification show';
+            
+            if (type === 'success') {
+                notification.style.background = 'var(--success)';
+                notification.innerHTML = '<i class="fas fa-check-circle"></i> ' + message;
+            } else if (type === 'warning') {
+                notification.style.background = 'var(--warning)';
+                notification.className = 'notification show warning';
+                notification.innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + message;
+            }
+            
+            setTimeout(() => {
+                notification.className = 'notification';
+            }, 3000);
+        }
+        
+        // Initialize when page loads
+        window.addEventListener('DOMContentLoaded', initGame);
+    </script>
+</body>
+</html>
