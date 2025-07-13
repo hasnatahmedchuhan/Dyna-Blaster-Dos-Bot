@@ -1,82 +1,174 @@
-import os
+ import os
 import sys
 import zipfile
 import shutil
 import json
+import argparse
 from PIL import Image
+from tqdm import tqdm  # For progress bars
 
-def extract_assets(zip_path, output_dir):
-    """Extract and organize assets from dyna.zip"""
+# Error handling class
+class AssetExtractionError(Exception):
+    pass
+
+def extract_assets(zip_path, output_dir, convert_images=True, organize_files=True):
+    """Extract and organize assets from game archive"""
     try:
+        print(f"🔧 Starting asset extraction from {zip_path}")
+        
         # Create output directories
         os.makedirs(output_dir, exist_ok=True)
         sprite_dir = os.path.join(output_dir, "sprites")
         tile_dir = os.path.join(output_dir, "tiles")
         sound_dir = os.path.join(output_dir, "sounds")
-        os.makedirs(sprite_dir, exist_ok=True)
-        os.makedirs(tile_dir, exist_ok=True)
-        os.makedirs(sound_dir, exist_ok=True)
+        other_dir = os.path.join(output_dir, "other")
         
-        # Extract ZIP contents
+        if organize_files:
+            os.makedirs(sprite_dir, exist_ok=True)
+            os.makedirs(tile_dir, exist_ok=True)
+            os.makedirs(sound_dir, exist_ok=True)
+            os.makedirs(other_dir, exist_ok=True)
+        
+        # Extract ZIP contents with progress bar
+        extracted_files = []
+        print(f"📦 Extracting archive contents...")
         with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            zip_ref.extractall(output_dir)
-            print(f"Extracted {len(zip_ref.namelist())} files")
+            file_list = zip_ref.namelist()
+            for file in tqdm(file_list, desc="Extracting"):
+                zip_ref.extract(file, output_dir)
+                extracted_files.append(os.path.join(output_dir, file))
         
+        print(f"✅ Extracted {len(extracted_files)} files")
+
         # Process files
         asset_index = []
-        for root, dirs, files in os.walk(output_dir):
-            for file in files:
-                file_path = os.path.join(root, file)
-                dest_dir = None
+        conversion_stats = {"converted": 0, "skipped": 0, "failed": 0}
+        
+        print("🔄 Processing assets...")
+        for file_path in tqdm(extracted_files, desc="Processing"):
+            if not os.path.isfile(file_path):
+                continue
                 
-                # Organize by file type
-                if file.endswith(('.pcx', '.bmp', '.img', '.gif')):
-                    dest_dir = sprite_dir if "sprite" in file.lower() else tile_dir
+            filename = os.path.basename(file_path)
+            dest_dir = other_dir
+            file_ext = os.path.splitext(filename)[1].lower()
+            
+            # Process images
+            if file_ext in ('.pcx', '.bmp', '.img', '.gif') and convert_images:
+                try:
                     # Convert to PNG
-                    if not file.lower().endswith('.png'):
-                        try:
-                            img = Image.open(file_path)
+                    if file_ext != '.png':
+                        with Image.open(file_path) as img:
                             new_path = os.path.splitext(file_path)[0] + '.png'
+                            
+                            # Preserve transparency if available
+                            if img.mode in ('RGBA', 'LA') or (img.mode == 'P' and 'transparency' in img.info):
+                                img = img.convert('RGBA')
+                            else:
+                                img = img.convert('RGB')
+                                
                             img.save(new_path)
                             os.remove(file_path)
                             file_path = new_path
-                            file = os.path.basename(new_path)
-                        except Exception as e:
-                            print(f"Couldn't convert {file}: {str(e)}")
-                elif file.endswith(('.voc', '.wav', '.aud')):
+                            filename = os.path.basename(new_path)
+                            conversion_stats["converted"] += 1
+                        # Update extension after conversion
+                        file_ext = '.png'
+                    else:
+                        conversion_stats["skipped"] += 1
+                except Exception as e:
+                    conversion_stats["failed"] += 1
+                    print(f"⚠️ Couldn't convert {filename}: {str(e)}")
+            
+            # Organize files
+            if organize_files:
+                if file_ext in ('.png', '.jpg', '.jpeg', '.gif'):
+                    if "sprite" in filename.lower():
+                        dest_dir = sprite_dir
+                    elif "tile" in filename.lower() or "background" in filename.lower():
+                        dest_dir = tile_dir
+                    else:
+                        # Try to auto-classify by dimensions
+                        try:
+                            with Image.open(file_path) as img:
+                                w, h = img.size
+                                if w <= 64 and h <= 64:  # Likely sprite
+                                    dest_dir = sprite_dir
+                                elif w >= 128 or h >= 128:  # Likely background/tile
+                                    dest_dir = tile_dir
+                        except:
+                            pass
+                elif file_ext in ('.voc', '.wav', '.aud', '.mp3', '.ogg'):
                     dest_dir = sound_dir
                 
                 # Move to organized directory
-                if dest_dir:
-                    new_path = os.path.join(dest_dir, file)
-                    shutil.move(file_path, new_path)
-                    asset_index.append({
-                        "type": os.path.basename(dest_dir)[:-1],
-                        "path": os.path.relpath(new_path, output_dir)
-                    })
+                new_path = os.path.join(dest_dir, filename)
+                shutil.move(file_path, new_path)
+                file_path = new_path
+            
+            # Add to manifest
+            asset_type = "other"
+            if dest_dir == sprite_dir:
+                asset_type = "sprite"
+            elif dest_dir == tile_dir:
+                asset_type = "tile"
+            elif dest_dir == sound_dir:
+                asset_type = "sound"
+                
+            asset_index.append({
+                "type": asset_type,
+                "path": os.path.relpath(file_path, output_dir),
+                "filename": filename,
+                "format": file_ext[1:]  # Remove dot
+            })
         
         # Create asset manifest
-        with open(os.path.join(output_dir, "manifest.json"), 'w') as f:
-            json.dump(asset_index, f, indent=2)
+        manifest_path = os.path.join(output_dir, "manifest.json")
+        with open(manifest_path, 'w') as f:
+            json.dump({
+                "assets": asset_index,
+                "stats": {
+                    "total_files": len(extracted_files),
+                    "images_converted": conversion_stats["converted"],
+                    "images_failed": conversion_stats["failed"],
+                    "images_skipped": conversion_stats["skipped"]
+                }
+            }, f, indent=2)
             
-        print(f"Assets organized in {output_dir}")
+        print(f"🎉 Assets successfully organized in {output_dir}")
+        print(f"📄 Manifest created at {manifest_path}")
+        print(f"📊 Conversion stats: {conversion_stats}")
         return True
         
     except Exception as e:
-        print(f"Error: {str(e)}")
-        return False
+        raise AssetExtractionError(f"Critical error: {str(e)}")
+
+def main():
+    parser = argparse.ArgumentParser(description='Extract and organize game assets')
+    parser.add_argument('zip_path', help='Path to game archive (ZIP file)')
+    parser.add_argument('output_dir', help='Output directory for extracted assets')
+    parser.add_argument('--no-convert', action='store_false', dest='convert_images',
+                        help='Skip image conversion to PNG')
+    parser.add_argument('--no-organize', action='store_false', dest='organize_files',
+                        help='Skip file organization')
+    
+    args = parser.parse_args()
+    
+    if not os.path.exists(args.zip_path):
+        print(f"❌ Error: File not found - {args.zip_path}")
+        sys.exit(1)
+        
+    try:
+        success = extract_assets(
+            args.zip_path, 
+            args.output_dir,
+            convert_images=args.convert_images,
+            organize_files=args.organize_files
+        )
+        sys.exit(0 if success else 1)
+    except AssetExtractionError as e:
+        print(f"❌ {str(e)}")
+        sys.exit(1)
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python extract_assets.py <zip_path> <output_dir>")
-        sys.exit(1)
-        
-    zip_path = sys.argv[1]
-    output_dir = sys.argv[2]
-    
-    if not os.path.exists(zip_path):
-        print(f"Error: File not found - {zip_path}")
-        sys.exit(1)
-        
-    success = extract_assets(zip_path, output_dir)
-    sys.exit(0 if success else 1)
+    main()     
