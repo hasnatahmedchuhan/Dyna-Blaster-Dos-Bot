@@ -1,0 +1,30 @@
+name: Extract Game Assets
+
+on:
+  workflow_dispatch: # Allows manual trigger
+  push:
+    paths:
+      - 'public/dyna.zip'
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+          
+      - name: Install Pillow
+        run: pip install pillow
+          
+      - name: Extract assets
+        run: python scripts/extract_assets.py public/dyna.zip public/game_assets
+        
+      - name: Upload assets
+        uses: actions/upload-artifact@v3
+        with:
+          name: game-assets
+          path: public/game_assets
